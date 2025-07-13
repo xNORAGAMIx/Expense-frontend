@@ -16,27 +16,27 @@ import { RiMoneyDollarCircleLine } from "react-icons/ri";
 const GroupDetails = () => {
   const email = useSelector((state) => state.auth.email);
   const { groupId } = useParams();
+  const group = useSelector((state) => state.groups.groups);
   const [members, setMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [balances, setBalances] = useState([]);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("expenses");
-
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [showSettle, setShowSettle] = useState(false);
   const [newExpense, setNewExpense] = useState({
     description: "",
     amount: "",
     category: "food",
     paidByEmail: "",
   });
-
   const [settleData, setSettleData] = useState({
     toEmail: "",
     amount: "",
   });
-
   const [newMemberEmail, setNewMemberEmail] = useState("");
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [showSettle, setShowSettle] = useState(false);
+
+  let name = group.find((g) => g.id == groupId)?.name || "Group";
 
   useEffect(() => {
     fetchGroupData();
@@ -49,12 +49,9 @@ const GroupDetails = () => {
         axios.get(`/${groupId}/expenses`),
         axios.get(`/${groupId}/balances`),
       ]);
-      console.log(membersRes);
-      
       setMembers(membersRes.data || []);
       setExpenses(expensesRes.data || []);
       setBalances(balancesRes.data || []);
-
       if (membersRes.data?.length && !newExpense.paidByEmail) {
         setNewExpense((prev) => ({
           ...prev,
@@ -62,25 +59,16 @@ const GroupDetails = () => {
         }));
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setError("Failed to load group data");
     }
-  };
-
-  const handleExpenseChange = (e) => {
-    const { name, value } = e.target;
-    setNewExpense((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
   const handleAddExpense = async () => {
     const { description, amount, category, paidByEmail } = newExpense;
     if (!description || !amount || !category || !paidByEmail) {
-      return setError("All expense fields are required.");
+      return setError("All fields are required.");
     }
-
     try {
       await axios.post(`/${groupId}/expenses`, {
         description,
@@ -88,478 +76,326 @@ const GroupDetails = () => {
         category,
         paidByEmail,
       });
-
       setNewExpense({
         description: "",
         amount: "",
         category: "food",
         paidByEmail: members[0]?.email || "",
       });
-      setError("");
       fetchGroupData();
-    } catch (err) {
-      console.log(err);
+      setError("");
+    } catch {
       setError("Failed to add expense.");
     }
   };
 
   const handleSettle = async () => {
     const { toEmail, amount } = settleData;
-
     if (!toEmail || !amount) {
-      return setError("Please select a user and amount to settle.");
+      return setError("Select user and amount.");
     }
-
     try {
       await axios.post(`/${groupId}/settle`, {
         toEmail,
         amount: Number(amount),
       });
-
       setSettleData({ toEmail: "", amount: "" });
-      setError("");
       fetchGroupData();
-    } catch (err) {
-      console.error(err);
-      setError("Failed to settle balance.");
+      setError("");
+    } catch {
+      setError("Failed to settle.");
     }
   };
 
   const handleAddMember = async () => {
-    if (!newMemberEmail) {
-      return setError("Please enter an email to add.");
-    }
-
+    if (!newMemberEmail) return setError("Enter email.");
     try {
-      await axios.post(`/${groupId}/members`, {
-        email: newMemberEmail,
-      });
-
+      await axios.post(`/${groupId}/members`, { email: newMemberEmail });
       setNewMemberEmail("");
-      setError("");
       fetchGroupData();
-    } catch (err) {
-      console.error(err);
-      setError("Failed to add member. Make sure email is valid.");
+      setError("");
+    } catch {
+      setError("Failed to add member.");
     }
   };
 
-  let matched = false;
-
-  for (const member of members) {
-    for (const balance of balances) {
-      if (balance.fromUser === member.name && member.email === email) {
-        matched = true;
-        break;
-      }
-    }
-    if (matched) break;
-  }
+  const matched = balances.some(
+    (b) => b.fromUser && members.some((m) => m.name === b.fromUser && m.email === email)
+  );
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] py-6 px-4 sm:px-6 lg:px-8 font-[DM Sans]">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen relative bg-gradient-to-br from-[#F5F7FA] to-[#E4EBF5] dark:from-[#121212] dark:to-[#1B1C1E] text-[#1B1C1E] dark:text-white font-[DM Sans] overflow-hidden">
+      {/* Background Blurred Gradients */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute w-[500px] h-[500px] bg-gradient-to-br from-[#3EB489]/30 to-[#A5F3A1]/20 rounded-full blur-3xl top-10 left-1/4 animate-pulse" />
+        <div className="absolute w-[300px] h-[300px] bg-gradient-to-tr from-white/20 to-white/0 rounded-full blur-2xl bottom-10 right-10 animate-pulse" />
+      </div>
+
+      {/* Main Wrapper */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#7F56D9] to-[#9333EA] rounded-xl p-6 mb-6 text-white shadow-lg">
-          <h1 className="text-3xl font-bold font-[Poppins]">Group Expenses</h1>
-          <p className="opacity-90">Manage shared expenses with your group</p>
+        <div className="bg-white/30 dark:bg-white/10 backdrop-blur-xl border border-white/20 rounded-[30px] p-6 mb-8 shadow-lg">
+          <h1 className="text-3xl font-bold font-[Poppins] text-[#1B1C1E] dark:text-white">
+            {name}
+          </h1>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Track, split & settle group expenses like a pro.
+          </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-[#F97316] p-4 mb-6 rounded">
-            <div className="flex items-center">
-              <svg
-                className="h-5 w-5 text-[#F97316]"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <p className="ml-3 text-sm text-[#111827]">{error}</p>
-            </div>
+          <div className="bg-red-100/30 dark:bg-red-500/10 text-red-800 dark:text-red-300 p-4 mb-4 rounded-xl border border-red-200 dark:border-red-500/20">
+            {error}
           </div>
         )}
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-xl shadow p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-[#7F56D9]/10 text-[#7F56D9] mr-4">
-                <FaUserPlus size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Members</p>
-                <p className="text-2xl font-semibold text-[#111827]">
-                  {members.length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-[#10B981]/10 text-[#10B981] mr-4">
-                <FaMoneyBillWave size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">
-                  Total Expenses
-                </p>
-                <p className="text-2xl font-semibold text-[#111827]">
-                  ₹{expenses.reduce((sum, exp) => sum + Number(exp.amount), 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-[#F97316]/10 text-[#F97316] mr-4">
-                <FaExchangeAlt size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">
-                  Pending Balances
-                </p>
-                <p className="text-2xl font-semibold text-[#111827]">
-                  {balances.length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Sidebar */}
-          <div className="lg:w-1/3 space-y-6">
-            {/* Members Card */}
-            <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-              <div className="bg-[#F3F4F6] px-6 py-4 border-b flex justify-between items-center">
-                <h2 className="font-semibold text-lg text-[#111827] font-[Poppins]">
-                  Group Members
-                </h2>
+        {/* Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Sidebar Left */}
+          <div className="space-y-6">
+            {/* Members */}
+            <div className="bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 rounded-[20px] p-5 shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="font-semibold font-[Poppins]">Members</h2>
                 <button
                   onClick={() => setShowAddMember(!showAddMember)}
-                  className="text-[#7F56D9] hover:text-[#9333EA] transition-colors flex items-center text-sm"
+                  className="text-[#67d956] hover:text-[#64884d] text-sm flex items-center gap-1"
                 >
-                  <FaPlus className="mr-1" /> Add
+                  <FaPlus /> Add
                 </button>
               </div>
-              <div className="p-4">
-                {showAddMember && (
-                  <div className="mb-4 bg-[#F3F4F6] p-4 rounded-lg">
-                    <input
-                      type="email"
-                      placeholder="Enter member email"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] mb-2"
-                      value={newMemberEmail}
-                      onChange={(e) => setNewMemberEmail(e.target.value)}
-                    />
-                    <button
-                      onClick={handleAddMember}
-                      className="w-full bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white py-2 px-4 rounded-lg hover:shadow-md transition-all flex items-center justify-center"
-                    >
-                      <FaCheck className="mr-2" /> Add Member
-                    </button>
-                  </div>
-                )}
 
-                <ul className="divide-y divide-gray-100">
-                  {members.map((member, idx) => (
+              {showAddMember && (
+                <div className="mb-4 space-y-2">
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    className="w-full p-2 rounded-xl border border-white/20 bg-white/20 dark:bg-white/10 backdrop-blur-md outline-none"
+                  />
+                  <button
+                    onClick={handleAddMember}
+                    className="w-full py-2 bg-gradient-to-tr from-[#097d32] to-[#3fb832] text-white rounded-xl "
+                  >
+                    <FaCheck className="inline mr-2" />
+                    Add Member
+                  </button>
+                </div>
+              )}
+
+              <ul className="space-y-2">
+                {members.map((m, i) => (
+                  <li key={i} className="flex items-center gap-3 p-2 hover:bg-white/10 rounded-xl transition">
+                    <div className="bg-gradient-to-tr from-[#4CAF50] to-[#81C784] text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">
+                      {m.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-semibold">{m.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-300">{m.email}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Balances */}
+            <div className="bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 rounded-[20px] p-5 shadow-md">
+              <h2 className="font-semibold font-[Poppins] mb-4">Balances</h2>
+
+              {balances.length > 0 ? (
+                <ul className="space-y-3">
+                  {balances.map((b, i) => (
                     <li
-                      key={idx}
-                      className="py-3 flex items-center hover:bg-[#F3F4F6] transition-colors px-2 rounded"
+                      key={i}
+                      className="bg-white/10 p-3 rounded-xl flex justify-between items-center"
                     >
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#7F56D9]/10 to-[#9333EA]/10 flex items-center justify-center text-[#7F56D9] font-medium mr-3">
-                        {member.name.charAt(0)}
+                      <div className="flex items-center gap-2">
+                        <GiPayMoney className="text-[#F97316]" />
+                        <span>{b.fromUser}</span>
                       </div>
-                      <div>
-                        <p className="font-medium text-[#111827]">
-                          {member.name}
-                        </p>
-                        <p className="text-sm text-gray-500">{member.email}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#F97316]">₹{b.amount}</span>
+                        <GiReceiveMoney className="text-[#10B981]" />
+                        <span>{b.toUser}</span>
                       </div>
                     </li>
                   ))}
                 </ul>
-              </div>
-            </div>
+              ) : (
+                <div className="text-center text-sm text-gray-500">
+                  <RiMoneyDollarCircleLine className="mx-auto text-3xl mb-1" />
+                  All settled up!
+                </div>
+              )}
 
-            {/* Balances Card */}
-            <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-              <div className="bg-[#F3F4F6] px-6 py-4 border-b">
-                <h2 className="font-semibold text-lg text-[#111827] font-[Poppins]">
-                  Balances
-                </h2>
-              </div>
-              <div className="p-4">
-                {balances.length > 0 ? (
-                  <ul className="space-y-3">
-                    {balances.map((bal, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-center justify-between p-3 bg-[#F3F4F6] rounded-lg"
-                      >
-                        <div className="flex items-center">
-                          <GiPayMoney className="text-[#F97316] mr-2" />
-                          <span className="font-medium text-[#111827]">
-                            {bal.fromUser}
-                          </span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="font-bold text-[#F97316]">
-                            ₹{bal.amount}
-                          </span>
-                          <GiReceiveMoney className="text-[#10B981] mx-2" />
-                          <span className="font-medium text-[#111827]">
-                            {bal.toUser}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-center py-6 text-gray-500">
-                    <RiMoneyDollarCircleLine className="mx-auto text-4xl text-gray-300 mb-2" />
-                    <p>All settled up!</p>
-                  </div>
-                )}
+              <button
+                onClick={() => setShowSettle(!showSettle)}
+                disabled={!matched}
+                className={`w-full mt-4 py-2 rounded-xl transition-all ${
+                  matched
+                    ? "bg-gradient-to-tr from-[#097d32] to-[#3fb832] text-white hover:scale-105"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                {showSettle ? "Cancel" : "Settle Up"}
+              </button>
 
-                <button
-                  onClick={() => setShowSettle(!showSettle)}
-                  disabled={!matched}
-                  className={`w-full mt-4 py-2 px-4 rounded-lg flex items-center justify-center ${
-                    showSettle
-                      ? "bg-gray-200 text-gray-800"
-                      : "bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white hover:shadow-md"
-                  } transition-all ${matched ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
-                >
-                  <FaExchangeAlt className="mr-2" />
-                  {showSettle ? "Cancel" : "Settle Up"}
-                </button>
-
-                {showSettle && (
-                  <div className="mt-4 bg-[#F3F4F6] p-4 rounded-lg">
-                    <select
-                      value={settleData.toEmail}
-                      onChange={(e) =>
-                        setSettleData((prev) => ({
-                          ...prev,
-                          toEmail: e.target.value,
-                        }))
-                      }
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] mb-2"
-                    >
-                      <option value="">Select a user to settle with</option>
-                      {members
-                        .filter((member) => member.email !== email)
-                        .map((member, idx) => (
-                          <option key={idx} value={member.email}>
-                            {member.name} ({member.email})
-                          </option>
-                        ))}
-                    </select>
-
-                    <input
-                      type="number"
-                      placeholder="Amount"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] mb-2"
-                      value={settleData.amount}
-                      onChange={(e) =>
-                        setSettleData((prev) => ({
-                          ...prev,
-                          amount: e.target.value,
-                        }))
-                      }
-                    />
-
-                    <button
-                      className="w-full bg-gradient-to-r from-[#10B981] to-[#34D399] text-white py-2 px-4 rounded-lg hover:shadow-md transition-all flex items-center justify-center"
-                      onClick={handleSettle}
-                    >
-                      <FaCheck className="mr-2" /> Confirm Settlement
-                    </button>
-                  </div>
-                )}
-              </div>
+              {showSettle && (
+                <div className="mt-4 space-y-3">
+                  <select
+                    value={settleData.toEmail}
+                    onChange={(e) =>
+                      setSettleData((prev) => ({ ...prev, toEmail: e.target.value }))
+                    }
+                    className="w-full p-2 border border-white/20 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md"
+                  >
+                    <option value="">Select member</option>
+                    {members
+                      .filter((m) => m.email !== email)
+                      .map((m, i) => (
+                        <option key={i} value={m.email}>
+                          {m.name} ({m.email})
+                        </option>
+                      ))}
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={settleData.amount}
+                    onChange={(e) =>
+                      setSettleData((prev) => ({ ...prev, amount: e.target.value }))
+                    }
+                    className="w-full p-2 border border-white/20 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md"
+                  />
+                  <button
+                    onClick={handleSettle}
+                    className="w-full py-2 bg-gradient-to-r from-[#097d32] to-[#3fb832] text-white rounded-xl"
+                  >
+                    <FaCheck className="inline mr-2" />
+                    Confirm Settlement
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Main Content Area */}
-          <div className="lg:w-2/3">
-            <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-              <div className="border-b border-gray-200">
-                <nav className="flex -mb-px">
-                  <button
-                    onClick={() => setActiveTab("expenses")}
-                    className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
-                      activeTab === "expenses"
-                        ? "border-[#7F56D9] text-[#7F56D9]"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    } font-[Poppins]`}
-                  >
-                    Expenses
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("add")}
-                    className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
-                      activeTab === "add"
-                        ? "border-[#7F56D9] text-[#7F56D9]"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    } font-[Poppins]`}
-                  >
-                    Add Expense
-                  </button>
-                </nav>
-              </div>
-
-              <div className="p-6">
-                {activeTab === "expenses" ? (
-                  <>
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-medium text-[#111827] font-[Poppins]">
-                        Recent Expenses
-                      </h3>
-                      <button
-                        onClick={() => setActiveTab("add")}
-                        className="bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white py-2 px-4 rounded-lg hover:shadow-md transition-all flex items-center"
-                      >
-                        <FaPlus className="mr-2" /> Add Expense
-                      </button>
-                    </div>
-
-                    {expenses.length > 0 ? (
-                      <div className="space-y-4">
-                        {expenses.map((expense, idx) => (
-                          <div
-                            key={idx}
-                            className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow"
-                          >
-                            <div className="flex justify-between">
-                              <div>
-                                <h4 className="font-medium text-[#111827]">
-                                  {expense.description}
-                                </h4>
-                                <p className="text-sm text-gray-500 capitalize">
-                                  {expense.category} • Paid by{" "}
-                                  {expense.paidByName}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-bold text-lg text-[#7F56D9]">
-                                  ₹{expense.amount}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {new Date(
-                                    expense.createdAt
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-10 text-gray-500">
-                        <FaReceipt className="mx-auto text-4xl text-gray-300 mb-2" />
-                        <p>No expenses added yet</p>
-                        <button
-                          onClick={() => setActiveTab("add")}
-                          className="mt-4 bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white py-2 px-4 rounded-lg hover:shadow-md transition-all"
-                        >
-                          Add Your First Expense
-                        </button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div>
-                    <h3 className="text-lg font-medium mb-4 text-[#111827] font-[Poppins]">
-                      Add New Expense
-                    </h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-[#111827] mb-2">
-                          Description
-                        </label>
-                        <input
-                          type="text"
-                          name="description"
-                          placeholder="Dinner at Restaurant"
-                          value={newExpense.description}
-                          onChange={handleExpenseChange}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-[#111827] mb-2">
-                          Amount (₹)
-                        </label>
-                        <input
-                          type="number"
-                          name="amount"
-                          placeholder="1200"
-                          value={newExpense.amount}
-                          onChange={handleExpenseChange}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-[#111827] mb-2">
-                          Category
-                        </label>
-                        <select
-                          name="category"
-                          value={newExpense.category}
-                          onChange={handleExpenseChange}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
-                        >
-                          <option value="food">Food & Dining</option>
-                          <option value="transport">Transportation</option>
-                          <option value="shopping">Shopping</option>
-                          <option value="entertainment">Entertainment</option>
-                          <option value="utilities">Utilities</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-[#111827] mb-2">
-                          Paid By
-                        </label>
-                        <select
-                          name="paidByEmail"
-                          value={newExpense.paidByEmail}
-                          onChange={handleExpenseChange}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
-                        >
-                          {members.map((member, idx) => (
-                            <option key={idx} value={member.email}>
-                              {member.name} ({member.email})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <button
-                        className="w-full bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white py-3 px-4 rounded-lg hover:shadow-md font-medium transition-all"
-                        onClick={handleAddExpense}
-                      >
-                        Add Expense
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+          {/* Right: Expense Tabs */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Tab Navigation */}
+            <div className="flex gap-4 border-b border-white/10 mb-4">
+              <button
+                onClick={() => setActiveTab("expenses")}
+                className={`py-2 px-4 font-[Poppins] transition ${
+                  activeTab === "expenses"
+                    ? "text-[#4CAF50] border-b-2 border-[#81C784]"
+                    : "text-gray-500"
+                }`}
+              >
+                Expenses
+              </button>
+              <button
+                onClick={() => setActiveTab("add")}
+                className={`py-2 px-4 font-[Poppins] transition ${
+                  activeTab === "add"
+                    ? "text-[#4CAF50] border-b-2 border-[#81C784]"
+                    : "text-gray-500"
+                }`}
+              >
+                Add Expense
+              </button>
             </div>
+
+            {activeTab === "expenses" ? (
+              expenses.length > 0 ? (
+                <div className="space-y-4">
+                  {expenses.map((e, i) => (
+                    <div
+                      key={i}
+                      className="bg-white/30 dark:bg-white/10 backdrop-blur-xl p-4 rounded-xl border border-white/20 shadow"
+                    >
+                      <div className="flex justify-between">
+                        <div>
+                          <h3 className="font-medium">{e.description}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            {e.category} • Paid by {e.paidByName}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg text-red-600 dark:text-amber-500 font-bold">₹{e.amount}</p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(e.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <FaReceipt className="mx-auto text-4xl text-gray-300 mb-2" />
+                  <p>No expenses yet.</p>
+                </div>
+              )
+            ) : (
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  name="description"
+                  placeholder="Description"
+                  value={newExpense.description}
+                  onChange={(e) =>
+                    setNewExpense((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                  className="w-full p-3 border border-white/20 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md outline-none"
+                />
+                <input
+                  type="number"
+                  name="amount"
+                  placeholder="Amount"
+                  value={newExpense.amount}
+                  onChange={(e) =>
+                    setNewExpense((prev) => ({ ...prev, amount: e.target.value }))
+                  }
+                  className="w-full p-3 border border-white/20 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md outline-none"
+                />
+                <select
+                  name="category"
+                  value={newExpense.category}
+                  onChange={(e) =>
+                    setNewExpense((prev) => ({ ...prev, category: e.target.value }))
+                  }
+                  className="w-full p-3 border border-white/20 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md"
+                >
+                  <option value="food">Food</option>
+                  <option value="transport">Transport</option>
+                  <option value="shopping">Shopping</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="utilities">Utilities</option>
+                  <option value="other">Other</option>
+                </select>
+                <select
+                  name="paidByEmail"
+                  value={newExpense.paidByEmail}
+                  onChange={(e) =>
+                    setNewExpense((prev) => ({ ...prev, paidByEmail: e.target.value }))
+                  }
+                  className="w-full p-3 border border-white/20 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md"
+                >
+                  {members.map((m, i) => (
+                    <option key={i} value={m.email}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAddExpense}
+                  className="w-full py-3 bg-gradient-to-r from-[#097d32] to-[#3fb832] text-white rounded-xl font-extrabold"
+                >
+                  Add Expense
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

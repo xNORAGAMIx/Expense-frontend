@@ -21,14 +21,22 @@ const persistConfig = {
   whitelist: ["email", "token", "isAuthenticated"], 
 };
 
+// Groups persist config
+const groupsPersistConfig = {
+  key: "groups",
+  storage,
+  whitelist: ["groups"], // Make sure your state is an object with `groups` key
+};
+
 // 2. Create persisted reducer
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
+const persistedGroupReducer = persistReducer(groupsPersistConfig, groupReducer);
 
 // 3. Setup store with middleware config
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
-    groups: groupReducer,
+    groups: persistedGroupReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

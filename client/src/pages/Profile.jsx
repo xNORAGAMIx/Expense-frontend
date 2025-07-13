@@ -255,36 +255,48 @@ const Profile = () => {
     },
   };
 
+  const totalOwedSum = spendSummary?.groupWise?.reduce(
+    (sum, item) => sum + (item.totalOwed || 0),
+    0
+  );
+
+  // console.log(totalOwedSum);
+
   return (
-    <div className="min-h-screen bg-[#F3F4F6] py-8 px-4 sm:px-6 lg:px-8 font-[DM Sans]">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#F5F7FA] to-[#E4EBF5] dark:from-[#121212] dark:to-[#1B1C1E] font-[DM Sans] py-8 px-4 sm:px-6 lg:px-8 relative overflow-x-hidden">
+      {/* Background Layer */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute w-[500px] h-[500px] bg-gradient-to-br from-[#3EB489]/30 to-[#A5F3A1]/20 rounded-full blur-3xl top-10 left-1/4 animate-pulse" />
+        <div className="absolute w-[300px] h-[300px] bg-gradient-to-tr from-white/20 to-white/0 rounded-full blur-2xl bottom-10 right-10 animate-pulse" />
+      </div>
+
+      <div className="max-w-6xl mx-auto space-y-6 relative z-10">
         {/* User Info Card */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+        <div className="bg-gradient-to-br from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 backdrop-blur-lg p-6 rounded-[30px] shadow-xl border border-white/20">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-[#111827] font-[Poppins]">
+            <h2 className="text-2xl font-bold text-[#1B1C1E] dark:text-white font-[Poppins]">
               Profile Information
             </h2>
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center text-[#7F56D9] hover:text-[#9333EA] transition-colors"
+                className="flex items-center text-[#67d956] hover:text-[#64884d] transition-colors"
               >
                 <FaEdit className="mr-2" /> Edit Profile
               </button>
             ) : (
               <button
                 onClick={() => setIsEditing(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-300"
               >
                 Cancel
               </button>
             )}
           </div>
-
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-[#111827] mb-2">
+                <label className="block text-sm text-[#111827] dark:text-white mb-2">
                   Full Name
                 </label>
                 <input
@@ -292,11 +304,11 @@ const Profile = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
+                  className="w-full px-4 dark:text-white py-2 border border-gray-600 rounded-lg outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[#111827] mb-2">
+                <label className="block text-sm text-[#111827] dark:text-white mb-2">
                   Email
                 </label>
                 <input
@@ -304,12 +316,12 @@ const Profile = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
+                  className="w-full px-4 py-2 border dark:text-white border-gray-600 rounded-lg outline-none"
                 />
               </div>
               <button
                 type="submit"
-                className="bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all"
+                className="bg-gradient-to-tr from-[#4CAF50] to-[#81C784] text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all"
               >
                 Save Changes
               </button>
@@ -317,15 +329,15 @@ const Profile = () => {
           ) : (
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#7F56D9] to-[#9333EA] flex items-center justify-center text-white text-2xl">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#4CAF50] to-[#81C784] flex items-center justify-center text-white text-2xl">
                   {user?.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-[#111827]">
+                  <h3 className="text-xl font-semibold text-[#111827] dark:text-white">
                     {user?.name}
                   </h3>
-                  <p className="flex items-center text-gray-600">
-                    <FaEnvelope className="mr-2 text-[#7F56D9]" /> {user?.email}
+                  <p className="flex items-center text-gray-400">
+                    <FaEnvelope className="mr-2" /> {user?.email}
                   </p>
                 </div>
               </div>
@@ -337,29 +349,25 @@ const Profile = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {/* Unverified Account Badge */}
                     <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100">
                       <FaTimesCircle className="mr-2 text-orange-500" />
                       <span className="text-sm font-medium">
                         Unverified Account
                       </span>
                     </div>
-
                     {!showOtpBox ? (
-                      /* Verify Email Button */
                       <button
                         onClick={() => {
                           sendOtp();
                           setShowOtpBox(true);
                         }}
-                        className="flex items-center text-sm px-4 py-2.5 bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white rounded-lg hover:shadow-md transition-all"
+                        className="flex items-center text-sm px-4 py-2.5 bg-gradient-to-tr from-[#097d32] to-[#3fb832] text-white rounded-lg hover:shadow-md transition-all"
                       >
                         <FaEnvelope className="mr-2" />
                         Verify Email
                       </button>
                     ) : (
-                      /* OTP Verification Box */
-                      <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <div className="space-y-3 bg-transparent p-4 rounded-2xl border border-gray-600">
                         <div className="flex items-center gap-2">
                           <div className="relative flex-1">
                             <input
@@ -367,7 +375,7 @@ const Profile = () => {
                               value={otp}
                               onChange={(e) => setOtp(e.target.value)}
                               placeholder="Enter 6-digit OTP"
-                              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] text-sm"
+                              className="w-full px-4 py-2 pl-10 border border-gray-600 rounded-lg outline-none text-sm dark:text-white"
                               maxLength="6"
                             />
                             <FaShieldAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
@@ -382,7 +390,7 @@ const Profile = () => {
                         </div>
                         <button
                           onClick={verifyOtp}
-                          className="w-full flex items-center justify-center py-2.5 bg-gradient-to-r from-[#10B981] to-[#34D399] text-white rounded-lg hover:shadow-md transition-all text-sm font-medium"
+                          className="w-full flex items-center justify-center py-2.5 bg-gradient-to-r from-[#29b025] to-[#1f9035] text-white rounded-lg hover:shadow-md transition-all text-sm font-medium"
                         >
                           <FaCheckCircle className="mr-2" />
                           Verify Email
@@ -397,51 +405,40 @@ const Profile = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab("expenses")}
-            className={`px-4 py-2 font-medium ${
-              activeTab === "expenses"
-                ? "text-[#7F56D9] border-b-2 border-[#7F56D9]"
-                : "text-gray-500"
-            } font-[Poppins]`}
-          >
-            <FaReceipt className="inline mr-2" /> My Expenses
-          </button>
-          <button
-            onClick={() => setActiveTab("settlements")}
-            className={`px-4 py-2 font-medium ${
-              activeTab === "settlements"
-                ? "text-[#7F56D9] border-b-2 border-[#7F56D9]"
-                : "text-gray-500"
-            } font-[Poppins]`}
-          >
-            <FaExchangeAlt className="inline mr-2" /> Settlements
-          </button>
-          <button
-            onClick={() => setActiveTab("summary")}
-            className={`px-4 py-2 font-medium ${
-              activeTab === "summary"
-                ? "text-[#7F56D9] border-b-2 border-[#7F56D9]"
-                : "text-gray-500"
-            } font-[Poppins]`}
-          >
-            <FaChartPie className="inline mr-2" /> Spend Summary
-          </button>
+        <div className="flex border-b border-white/20 backdrop-blur-md">
+          {["expenses", "settlements", "summary"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 font-medium font-[Poppins] transition-all ${
+                activeTab === tab
+                  ? "text-[#4CAF50] border-b-2 border-[#81C784]"
+                  : "text-gray-500"
+              }`}
+            >
+              {tab === "expenses" && <FaReceipt className="inline mr-2" />}
+              {tab === "settlements" && (
+                <FaExchangeAlt className="inline mr-2" />
+              )}
+              {tab === "summary" && <FaChartPie className="inline mr-2" />}
+              {tab.charAt(0).toUpperCase() +
+                tab.slice(1).replace(/([A-Z])/g, " $1")}
+            </button>
+          ))}
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+        <div className="bg-gradient-to-br from-white/40 to-white/10 dark:from-white/10 dark:to-white/5 backdrop-blur-xl p-6 rounded-[30px] shadow-xl border border-white/20">
           {activeTab === "expenses" && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-[#111827] font-[Poppins]">
+                <h2 className="text-xl font-bold dark:text-white text-[#111827] font-[Poppins]">
                   My Expenses
                 </h2>
                 <button
                   onClick={loadMyExpenses}
                   disabled={isLoading}
-                  className="bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
+                  className="bg-gradient-to-r from-[#29b025] to-[#1f9035] text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
                 >
                   {isLoading ? "Loading..." : "Load Expenses"}
                 </button>
@@ -451,18 +448,18 @@ const Profile = () => {
                   {expenses.map((exp, idx) => (
                     <div
                       key={idx}
-                      className="p-4 border border-gray-100 rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                      className="p-4 border dark:hover:bg-zinc-800 border-zinc-600 rounded-2xl hover:bg-[#F3F4F6] transition-colors"
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <h3 className="font-medium text-[#111827]">
+                          <h3 className="font-medium dark:text-gray-300 text-[#111827]">
                             {exp.description}
                           </h3>
                           <p className="text-sm text-gray-500">
                             {exp.groupName}
                           </p>
                         </div>
-                        <span className="font-bold text-[#7F56D9]">
+                        <span className="font-bold text-amber-600">
                           ₹{exp.amount}
                         </span>
                       </div>
@@ -482,13 +479,13 @@ const Profile = () => {
             <div className="space-y-8">
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-[#111827] font-[Poppins]">
+                  <h2 className="text-xl font-bold text-[#111827] dark:text-white font-[Poppins]">
                     Sent Settlements
                   </h2>
                   <button
                     onClick={loadSettlements}
                     disabled={isLoading}
-                    className="bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
+                    className="bg-gradient-to-r from-[#29b025] to-[#1f9035] text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
                   >
                     {isLoading ? "Loading..." : "Load Settlements"}
                   </button>
@@ -498,19 +495,19 @@ const Profile = () => {
                     {settlements.map((s, idx) => (
                       <div
                         key={idx}
-                        className="p-4 border border-gray-100 rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                        className="p-4 border border-zinc-600 rounded-2xl hover:bg-[#F3F4F6] dark:hover:bg-zinc-800 transition-colors"
                       >
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="text-[#111827]">
+                            <p className="text-[#111827] dark:text-white">
                               You paid{" "}
                               <span className="font-semibold">{s.toName}</span>
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                               {s.settledAt}
                             </p>
                           </div>
-                          <span className="font-bold text-[#10B981]">
+                          <span className="font-bold text-[#10B981] dark:text-amber-600">
                             ₹{s.amount}
                           </span>
                         </div>
@@ -527,13 +524,13 @@ const Profile = () => {
 
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-[#111827] font-[Poppins]">
+                  <h2 className="text-xl font-bold text-[#111827] dark:text-white font-[Poppins]">
                     Received Settlements
                   </h2>
                   <button
                     onClick={loadReceivedSettlements}
                     disabled={isLoading}
-                    className="bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
+                    className="bg-gradient-to-r from-[#29b025] to-[#1f9035] text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
                   >
                     {isLoading ? "Loading..." : "Load Received"}
                   </button>
@@ -543,11 +540,11 @@ const Profile = () => {
                     {receivedSettlements.map((s, idx) => (
                       <div
                         key={idx}
-                        className="p-4 border border-gray-100 rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                        className="p-4 border border-zinc-600 rounded-2xl dark:hover:bg-zinc-800 hover:bg-[#F3F4F6] transition-colors"
                       >
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="text-[#111827]">
+                            <p className="text-[#111827] dark:text-white">
                               Received from{" "}
                               <span className="font-semibold">
                                 {s.fromName}
@@ -557,7 +554,7 @@ const Profile = () => {
                               {s.settledAt}
                             </p>
                           </div>
-                          <span className="font-bold text-[#10B981]">
+                          <span className="font-bold text-amber-600">
                             ₹{s.amount}
                           </span>
                         </div>
@@ -577,13 +574,13 @@ const Profile = () => {
           {activeTab === "summary" && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-[#111827] font-[Poppins]">
+                <h2 className="text-xl font-bold text-[#111827] font-[Poppins] dark:text-white">
                   Spend Summary
                 </h2>
                 <button
                   onClick={loadSpendSummary}
                   disabled={isLoading}
-                  className="bg-gradient-to-r from-[#7F56D9] to-[#9333EA] text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
+                  className="bg-gradient-to-r from-[#29b025] to-[#1f9035] text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
                 >
                   {isLoading ? "Loading..." : "Load Summary"}
                 </button>
@@ -593,24 +590,24 @@ const Profile = () => {
                 <div className="space-y-8">
                   {/* Total Spent Card */}
                   <div className="p-6 bg-gradient-to-r from-[#7F56D9]/10 to-[#9333EA]/10 rounded-xl">
-                    <h3 className="font-semibold text-[#111827] mb-2">
+                    <h3 className="font-semibold text-[#111827] mb-2 dark:text-white">
                       Total Actual Spent
                     </h3>
-                    <p className="text-3xl font-bold text-[#7F56D9]">
+                    <p className="text-3xl font-bold text-red-600">
                       ₹{spendSummary.totalActualSpent.toFixed(2)}
                     </p>
                   </div>
 
                   {/* Group-wise Summary */}
-                  <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-                    <h3 className="font-semibold text-[#111827] mb-4 flex items-center">
+                  <div className="bg-transparent p-6 rounded-2xl shadow-md border border-zinc-600">
+                    <h3 className="font-semibold text-[#111827] dark:text-white mb-4 flex items-center">
                       <FaUsers className="mr-2 text-[#7F56D9]" /> Group-wise
                       Summary
                     </h3>
 
                     <div className="grid gap-8 lg:grid-cols-2">
                       <div className="h-80">
-                        <h4 className="text-lg font-medium text-[#111827] mb-3">
+                        <h4 className="text-lg font-medium text-[#111827] dark:text-white mb-3">
                           Spending Breakdown
                         </h4>
                         {getGroupWiseChartData() && (
@@ -622,29 +619,29 @@ const Profile = () => {
                       </div>
 
                       <div>
-                        <h4 className="text-lg font-medium text-[#111827] mb-3">
+                        <h4 className="text-lg font-medium text-[#111827] dark:text-white mb-3">
                           Group Details
                         </h4>
                         <div className="space-y-4">
                           {spendSummary.groupWise.map((g, idx) => (
                             <div
                               key={idx}
-                              className="p-4 border border-gray-100 rounded-lg hover:shadow-md transition-shadow"
+                              className="p-4 border border-zinc-600 rounded-2xl hover:shadow-md transition-shadow"
                             >
-                              <h4 className="font-medium text-[#111827] mb-2">
+                              <h4 className="font-medium text-[#111827] dark:text-white mb-2">
                                 {g.groupName}
                               </h4>
                               <div className="space-y-1 text-sm">
                                 <p className="flex justify-between">
-                                  <span className="text-gray-500">
+                                  <span className="text-gray-500 dark:text-gray-300">
                                     Total Paid:
                                   </span>
-                                  <span className="font-medium">
+                                  <span className="font-medium dark:text-white">
                                     ₹{g.totalPaid}
                                   </span>
                                 </p>
                                 <p className="flex justify-between">
-                                  <span className="text-gray-500">
+                                  <span className="text-gray-500 dark:text-gray-300">
                                     Actual Spent:
                                   </span>
                                   <span className="font-medium text-[#10B981]">
@@ -652,7 +649,7 @@ const Profile = () => {
                                   </span>
                                 </p>
                                 <p className="flex justify-between">
-                                  <span className="text-gray-500">
+                                  <span className="text-gray-500 dark:text-gray-300">
                                     Total Owed:
                                   </span>
                                   <span className="font-medium text-red-600">
@@ -668,15 +665,15 @@ const Profile = () => {
                   </div>
 
                   {/* Category-wise Summary */}
-                  <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-                    <h3 className="font-semibold text-[#111827] mb-4 flex items-center">
+                  <div className="bg-transparent p-6 rounded-2xl shadow-md border border-zinc-600">
+                    <h3 className="font-semibold text-[#111827] dark:text-white mb-4 flex items-center">
                       <FaChartPie className="mr-2 text-[#7F56D9]" />{" "}
                       Category-wise Summary
                     </h3>
 
-                    <div className="grid gap-8 lg:grid-cols-2">
+                    <div className="grid gap-8 lg:grid-cols-2 mb-4">
                       <div className="h-80">
-                        <h4 className="text-lg font-medium text-[#111827] mb-3">
+                        <h4 className="text-lg font-medium text-[#111827] dark:text-white mb-3">
                           Spending Distribution
                         </h4>
                         {getCategoryWiseChartData() && (
@@ -688,37 +685,37 @@ const Profile = () => {
                       </div>
 
                       <div>
-                        <h4 className="text-lg font-medium text-[#111827] mb-3">
+                        <h4 className="text-lg font-medium text-[#111827] dark:text-white mb-3">
                           Category Details
                         </h4>
                         <div className="space-y-4">
                           {spendSummary.categoryWise.map((c, idx) => (
                             <div
                               key={idx}
-                              className="p-4 border border-gray-100 rounded-lg hover:shadow-md transition-shadow"
+                              className="p-4 border border-zinc-600 rounded-2xl hover:shadow-md transition-shadow"
                             >
-                              <h4 className="font-medium text-[#111827] mb-2">
+                              <h4 className="font-medium dark:text-white text-[#111827] mb-2">
                                 {c.category}
                               </h4>
                               <div className="space-y-1 text-sm">
                                 <p className="flex justify-between">
-                                  <span className="text-gray-500">
+                                  <span className="text-gray-500 dark:text-gray-300">
                                     Total Paid:
                                   </span>
-                                  <span className="font-medium">
+                                  <span className="font-medium dark:text-white">
                                     ₹{c.totalPaid}
                                   </span>
                                 </p>
                                 <p className="flex justify-between">
-                                  <span className="text-gray-500">
+                                  <span className="text-gray-500 dark:text-gray-300">
                                     Actual Spent:
                                   </span>
-                                  <span className="font-medium text-[#10B981]">
+                                  <span className="font-medium text-[#10B981] ">
                                     ₹{c.totalOwed}
                                   </span>
                                 </p>
                                 <p className="flex justify-between">
-                                  <span className="text-gray-500">
+                                  <span className="text-gray-500 dark:text-gray-300" >
                                     Total Owed:
                                   </span>
                                   <span className="font-medium text-red-600">

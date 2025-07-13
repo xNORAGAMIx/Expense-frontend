@@ -19,3 +19,8 @@ export const getUserGroups = () => {
 export const createGroup = (data) => {
   return axios.post("/create-group", data);
 }
+
+
+export const deleteGroup = (groupId) => {
+  return axios.delete(`/${groupId}`);
+};
