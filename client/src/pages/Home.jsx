@@ -11,7 +11,7 @@ import {
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { useEffect } from "react";
-import HomeImage from "../assets/home.png";
+import HomeImage from "../assets/logo.png";
 
 const FeatureCard = ({ icon, title, description, index }) => {
   const controls = useAnimation();
