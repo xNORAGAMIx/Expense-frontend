@@ -22,6 +22,7 @@ const GroupDetails = () => {
   const [balances, setBalances] = useState([]);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("expenses");
+  const [expenseLoader, setExpenseLoader] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showSettle, setShowSettle] = useState(false);
   const [newExpense, setNewExpense] = useState({
@@ -65,6 +66,7 @@ const GroupDetails = () => {
   };
 
   const handleAddExpense = async () => {
+    setExpenseLoader(true);
     const { description, amount, category, paidByEmail } = newExpense;
     if (!description || !amount || !category || !paidByEmail) {
       return setError("All fields are required.");
@@ -86,6 +88,8 @@ const GroupDetails = () => {
       setError("");
     } catch {
       setError("Failed to add expense.");
+    } finally {
+      setExpenseLoader(false);
     }
   };
 
@@ -365,7 +369,7 @@ const GroupDetails = () => {
                   onChange={(e) =>
                     setNewExpense((prev) => ({ ...prev, category: e.target.value }))
                   }
-                  className="w-full p-3 border border-white/20 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md"
+                  className=" w-full p-3 border border-white/20 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md"
                 >
                   <option value="food">Food</option>
                   <option value="transport">Transport</option>
@@ -392,7 +396,7 @@ const GroupDetails = () => {
                   onClick={handleAddExpense}
                   className="w-full py-3 bg-gradient-to-r from-[#097d32] to-[#3fb832] text-white rounded-xl font-extrabold"
                 >
-                  Add Expense
+                  {expenseLoader ? "Please Wait..." : "Add Expense"}
                 </button>
               </div>
             )}
